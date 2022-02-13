@@ -1,0 +1,4 @@
+__venv/
+.idea/
+__pycache__/
+drivers/
