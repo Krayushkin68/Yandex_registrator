@@ -4,7 +4,6 @@ import random
 import time
 import zipfile
 
-import pyautogui
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -42,10 +41,12 @@ def create_driver(hidden=False, proxy=None):
 def register_mail(driver):
     url = r'https://mail.yandex.ru/'
     driver.get(url)
+    time.sleep(1)
+
+    btn = driver.find_element(By.XPATH, '//*[@id="index-page-container"]/div/div[2]/div/div/div[4]/a[1]')
+    btn.click()
     time.sleep(2)
 
-    driver.find_element(By.XPATH, '//*[@id="index-page-container"]/div/div[2]/div/div/div[4]/a[1]').click()
-    time.sleep(random.random() + random.randint(0, 1))
     account = Account()
 
     name_input = driver.find_element(By.XPATH, '//*[@id="firstname"]')
@@ -235,21 +236,14 @@ def add_account_to_file(account, filename):
         json.dump([account.to_json()], open(filename, 'w'))
 
 
-def enter_proxy_auth(proxy_username, proxy_password):
-    time.sleep(1)
-    pyautogui.typewrite(proxy_username, interval=0.1)
-    pyautogui.press('tab')
-    pyautogui.typewrite(proxy_password, interval=0.1)
-    pyautogui.press('enter')
-
-
 def register_multiple_mails(count, filename, hidden=False):
-    accounts = []
-    while len(accounts) < count:
+    accounts = 0
+    while accounts < count:
         try:
             driver = create_driver(hidden=hidden)
             account = register_mail(driver)
-            accounts.append(account)
+            add_account_to_file(account, filename)
+            accounts += 1
             print('Registered account')
             driver.quit()
             time.sleep(2)
@@ -258,9 +252,6 @@ def register_multiple_mails(count, filename, hidden=False):
             driver.quit()
             time.sleep(2)
             continue
-
-    for account in accounts:
-        add_account_to_file(account, filename)
 
 
 def get_api_keys_for_mails(filename, hidden=False):
@@ -314,7 +305,8 @@ def register_and_get_api(filename, hidden=False):
 
 
 if __name__ == '__main__':
-    # register_multiple_mails(1, 'accounts.json', hidden=False)
-    # get_api_keys_for_mails('accounts.json', hidden=False)
+    # register_multiple_mails(count=2, 'accounts.json', hidden=True)
 
-    register_and_get_api('accounts.json', hidden=True)
+    get_api_keys_for_mails('accounts.json', hidden=False)
+
+    # register_and_get_api('accounts.json', hidden=True)
