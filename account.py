@@ -6,15 +6,33 @@ import names
 
 
 class Account:
-    def __init__(self):
-        self.name = names.get_first_name()
-        self.lastname = names.get_last_name()
-        self.login = self.create_login()
-        self.password = self.create_password()
-        self.answer = self.create_answer()
+    def __init__(self, json=None):
+        if json:
+            self.name = json['name']
+            self.lastname = json['lastname']
+            self.login = json['login']
+            self.password = json['password']
+            self.answer = json['answer']
+            self.token = json['TOKEN']
+        else:
+            self.name = names.get_first_name()
+            self.lastname = names.get_last_name()
+            self.login = self.create_login()
+            self.password = self.create_password()
+            self.answer = self.create_answer()
+            self.token = False
 
     def __str__(self):
         return f'{self.login}@yandex.ru {self.password}'
+
+    def to_json(self):
+        return {"name": self.name,
+                "lastname": self.lastname,
+                "login": self.login,
+                "password": self.password,
+                "answer": self.answer,
+                "TOKEN": self.token}
+
 
     def create_login(self):
         symbols = ['.', '-']

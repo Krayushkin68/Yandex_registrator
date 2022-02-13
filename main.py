@@ -1,35 +1,41 @@
+import json
 import os
 import random
 import time
+import zipfile
 
+import pyautogui
 import undetected_chromedriver as uc
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
 from account import Account
 from captcha import solve
+from proxies import prepare_proxy
 
 
-def create_driver(proxy=None):
-    options = webdriver.ChromeOptions()
+def create_driver(hidden=False, proxy=None):
     chrome_driver = os.getcwd() + r'\drivers\chromedriver.exe'
+    options = uc.ChromeOptions()
+    options.headless = hidden
 
-    capabilities = None
     if proxy:
-        prox = Proxy()
-        prox.proxy_type = ProxyType.MANUAL
-        prox.http_proxy = proxy
+        pluginfile = 'drivers/proxy_auth_plugin.zip'
+        with zipfile.ZipFile(pluginfile, 'w') as zp:
+            manifest_json, background_js = prepare_proxy(proxy)
+            zp.writestr("manifest.json", manifest_json)
+            zp.writestr("background.js", background_js)
+        options.add_extension(pluginfile)
+        # options.add_argument(f'--proxy-server={proxy.split("@")[1]}')
 
-        capabilities = webdriver.DesiredCapabilities.CHROME
-        prox.add_to_capabilities(capabilities)
+    driver = uc.Chrome(options=options, executable_path=chrome_driver, use_subprocess=True)
+    # driver = webdriver.Chrome(options=options, executable_path=chrome_driver)
 
-    driver = uc.Chrome(options=options, executable_path=chrome_driver, use_subprocess=True,
-                       desired_capabilities=capabilities)
-    driver.set_window_size(1024, 768)
+    # driver.set_window_size(1024, 768)
+    driver.maximize_window()
+    time.sleep(2)
     return driver
 
 
@@ -37,6 +43,7 @@ def register_mail(driver):
     url = r'https://mail.yandex.ru/'
     driver.get(url)
     time.sleep(2)
+
     driver.find_element(By.XPATH, '//*[@id="index-page-container"]/div/div[2]/div/div/div[4]/a[1]').click()
     time.sleep(random.random() + random.randint(0, 1))
     account = Account()
@@ -108,13 +115,9 @@ def register_mail(driver):
     return account
 
 
-def add_account_to_file(account, filename):
-    with open(filename, 'a') as f:
-        f.write(f'{account.login}@yandex.ru;{account.password}\n')
-
-
 def register_api(driver, account):
     driver.get(r'https://developer.tech.yandex.ru/services/')
+    time.sleep(2)
 
     try:
         login_input = driver.find_element(By.XPATH, '//*[@id="passp-field-login"]')
@@ -209,22 +212,109 @@ def register_api(driver, account):
 
     WebDriverWait(driver, 20).until(
         EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/section/footer/button[1]'))).click()
-    time.sleep(3)
+    time.sleep(25)
+
+    try:
+        btn = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/section/footer/button[1]')
+        btn.click()
+        time.sleep(3)
+    except:
+        return None
+
+    key = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/main/article/section[2]/div/div/div/div[1]/div[2]')
+    key = key.text
+    return key
+
+
+def add_account_to_file(account, filename):
+    try:
+        data = json.load(open(filename, 'r'))
+        data.append(account.to_json())
+        json.dump(data, open(filename, 'w'))
+    except:
+        json.dump([account.to_json()], open(filename, 'w'))
+
+
+def enter_proxy_auth(proxy_username, proxy_password):
+    time.sleep(1)
+    pyautogui.typewrite(proxy_username, interval=0.1)
+    pyautogui.press('tab')
+    pyautogui.typewrite(proxy_password, interval=0.1)
+    pyautogui.press('enter')
+
+
+def register_multiple_mails(count, filename, hidden=False):
+    accounts = []
+    while len(accounts) < count:
+        try:
+            driver = create_driver(hidden=hidden)
+            account = register_mail(driver)
+            accounts.append(account)
+            print('Registered account')
+            driver.quit()
+            time.sleep(2)
+        except:
+            print('Register fails')
+            driver.quit()
+            time.sleep(2)
+            continue
+
+    for account in accounts:
+        add_account_to_file(account, filename)
+
+
+def get_api_keys_for_mails(filename, hidden=False):
+    accounts = json.load(open(filename, 'r'))
+    for account in accounts:
+        if account['TOKEN']:
+            continue
+        try:
+            driver = create_driver(hidden=hidden)
+            key = register_api(driver, Account(account))
+            if key:
+                print(key)
+                account['TOKEN'] = key
+            else:
+                print('Getting API fails')
+            driver.quit()
+            time.sleep(2)
+        except:
+            print('Getting API fails')
+            driver.quit()
+            time.sleep(2)
+            continue
+    json.dump(accounts, open(filename, 'w'))
+
+
+def register_and_get_api(filename, hidden=False):
+    counter = 0
+    while True:
+        counter += 1
+        is_acc = False
+        try:
+            driver = create_driver(hidden=hidden)
+            account = register_mail(driver)
+            is_acc = True
+            print(f'Try № {counter}: account registered')
+            key = register_api(driver, account)
+            if key:
+                print(f'Try № {counter}: key recieved - "{key}"\n')
+                account.token = key
+            else:
+                print(f'Try № {counter}: FAIL\n')
+            add_account_to_file(account, filename)
+            driver.quit()
+            time.sleep(2)
+        except:
+            print(f'Try № {counter}: FAIL\n')
+            if is_acc:
+                add_account_to_file(account, filename)
+            driver.quit()
+            time.sleep(2)
 
 
 if __name__ == '__main__':
-    driver = create_driver()
-    account = register_mail(driver)
-    add_account_to_file(account, 'accounts.txt')
-    # print(account)
-    # account = Account()
-    # account.name = 'Margaret'
-    # account.lastname = 'Deaton'
-    # account.login = 'Margaret-Deaton.233'
-    # account.password = 'tCM00S2Wzt48M2ZI0zhL'
+    # register_multiple_mails(1, 'accounts.json', hidden=False)
+    # get_api_keys_for_mails('accounts.json', hidden=False)
 
-    register_api(driver, account)
-
-    time.sleep(100)
-
-    driver.quit()
+    register_and_get_api('accounts.json', hidden=True)
