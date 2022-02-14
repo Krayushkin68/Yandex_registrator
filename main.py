@@ -5,11 +5,12 @@ import time
 import zipfile
 
 import undetected_chromedriver as uc
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
+import sms_activator
 from account import Account
 from captcha import solve
 from proxies import prepare_proxy
@@ -27,10 +28,9 @@ def create_driver(hidden=False, proxy=None):
             zp.writestr("manifest.json", manifest_json)
             zp.writestr("background.js", background_js)
         options.add_extension(pluginfile)
-        # options.add_argument(f'--proxy-server={proxy.split("@")[1]}')
-
-    driver = uc.Chrome(options=options, executable_path=chrome_driver, use_subprocess=True)
-    # driver = webdriver.Chrome(options=options, executable_path=chrome_driver)
+        driver = webdriver.Chrome(options=options, executable_path=chrome_driver)
+    else:
+        driver = uc.Chrome(options=options, executable_path=chrome_driver, use_subprocess=True)
 
     # driver.set_window_size(1024, 768)
     driver.maximize_window()
@@ -78,35 +78,43 @@ def register_mail(driver):
     driver.execute_script("window.scrollTo(0, 200)")
     time.sleep(1)
 
-    nophone_btn = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/'
-                                                'div[3]/div/div[2]/div/div[1]/span')
-    nophone_btn.click()
-    time.sleep(random.random() + random.randint(0, 1))
+    phone_input = driver.find_element(By.XPATH, '//*[@id="phone"]')
+    phone = sms_activator.get_number(sms_activator.TOKEN)
+    if phone:
+        idx, phone = phone
+        account.phone = phone
+        phone_input.send_keys(phone[1:])
+        time.sleep(4)
+    else:
+        raise Exception('Getting SMS error')
 
-    driver.execute_script("window.scrollTo(0, 300)")
+    send_btn = driver.find_element(By.XPATH,
+                                   '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/button')
+    send_btn.click()
     time.sleep(1)
 
-    select = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/'
-                                           'div/div[1]/div[1]/div[1]/span/select')
-    time.sleep(random.random() + random.randint(0, 1))
-    select = Select(select)
-    select.select_by_index(1)
-    time.sleep(random.random() + random.randint(0, 1))
+    text_el = driver.find_element(By.XPATH,
+                                  '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[1]/span')
+    if text_el.text != 'Минутку, код подтверждения отправлен на указанный номер':
+        WebDriverWait(driver, 35).until(EC.presence_of_element_located((By.XPATH,
+                                                                        '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/div[1]/div/div/div[2]/div[3]/span'))).click()
 
-    ans = driver.find_element(By.XPATH, '//*[@id="hint_answer"]')
-    ans.send_keys(account.answer)
-    time.sleep(random.random() + random.randint(0, 1))
+    # time.sleep(35)
+    # sms_btn = driver.find_element(By.XPATH,
+    #                               '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/div[1]/div/div/div[2]/div[3]/span')
+    # sms_btn.click()
+    time.sleep(1)
 
-    captcha = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/'
-                                            'div[3]/div/div[2]/div[2]/div/div[1]/img')
-    captcha_img = captcha.get_attribute('src')
-    captcha_res = solve(captcha_img)
-    if not captcha_res:
-        driver.quit()
+    sms_activator.set_status(sms_activator.TOKEN, idx, 'send')
+    code = sms_activator.get_code(sms_activator.TOKEN, idx)
+    if not code:
+        sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+        raise Exception('Getting SMS error')
+    sms_activator.set_status(sms_activator.TOKEN, idx, 'done')
 
-    captcha_input = driver.find_element(By.XPATH, '//*[@id="captcha"]')
-    captcha_input.send_keys(captcha_res)
-    time.sleep(random.random() + random.randint(0, 1))
+    code_input = driver.find_element(By.XPATH, '//*[@id="phoneCode"]')
+    code_input.send_keys(code)
+    time.sleep(5)
 
     register_btn = driver.find_element(By.XPATH,
                                        '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[4]/span/button')
@@ -116,35 +124,39 @@ def register_mail(driver):
     return account
 
 
-def register_api(driver, account):
-    driver.get(r'https://developer.tech.yandex.ru/services/')
-    time.sleep(2)
+def pass_authorize_form(driver, account):
+    login_input = driver.find_element(By.XPATH, '//*[@id="passp-field-login"]')
+    login_input.send_keys(f'{account.login}@yandex.ru')
+    time.sleep(random.random() + random.randint(0, 1))
+
+    enter_btn = driver.find_element(By.XPATH, '//*[@id="passp:sign-in"]')
+    enter_btn.click()
+    time.sleep(3)
+
+    pass_input = driver.find_element(By.XPATH, '//*[@id="passp-field-passwd"]')
+    pass_input.send_keys(account.password)
+    time.sleep(random.random() + random.randint(0, 1))
+
+    enter2_btn = driver.find_element(By.XPATH, '//*[@id="passp:sign-in"]')
+    enter2_btn.click()
+    time.sleep(5)
 
     try:
-        login_input = driver.find_element(By.XPATH, '//*[@id="passp-field-login"]')
-        login_input.send_keys(f'{account.login}@yandex.ru')
-        time.sleep(random.random() + random.randint(0, 1))
-
-        enter_btn = driver.find_element(By.XPATH, '//*[@id="passp:sign-in"]')
-        enter_btn.click()
-        time.sleep(3)
-
-        pass_input = driver.find_element(By.XPATH, '//*[@id="passp-field-passwd"]')
-        pass_input.send_keys(account.password)
-        time.sleep(random.random() + random.randint(0, 1))
-
-        enter2_btn = driver.find_element(By.XPATH, '//*[@id="passp:sign-in"]')
-        enter2_btn.click()
-        time.sleep(7)
-
-        try:
-            enter3_btn = driver.find_element(By.XPATH,
-                                             '//*[@id="root"]/div/div[2]/div[2]/div/div/div[2]/div[3]/div/div/form/div[3]/button')
-            enter3_btn.click()
-            time.sleep(5)
-        except:
-            pass
+        enter3_btn = driver.find_element(By.XPATH,
+                                         '//*[@id="root"]/div/div[2]/div[2]/div/div/div[2]/div[3]/div/div/form/div[3]/button')
+        enter3_btn.click()
+        time.sleep(5)
     except:
+        pass
+
+
+def register_api(driver, account):
+    driver.get(r'https://developer.tech.yandex.ru/services/')
+    time.sleep(3)
+
+    try:
+        pass_authorize_form(driver, account)
+    except Exception:
         pass
 
     time.sleep(3)
@@ -166,7 +178,7 @@ def register_api(driver, account):
 
     cmp_name_input = input_elements[0]
     cmp_name_input.clear()
-    cmp_name_input.send_keys(f'{account.name} project')
+    cmp_name_input.send_keys(account.generate_company())
     time.sleep(random.random() + random.randint(0, 1))
 
     name_input = input_elements[1]
@@ -180,7 +192,7 @@ def register_api(driver, account):
     time.sleep(random.random() + random.randint(0, 1))
 
     phone_input = input_elements[3]
-    phone_input.send_keys('+79' + ''.join([str(random.randint(0, 9)) for _ in range(9)]))
+    phone_input.send_keys(f'+{account.phone}')
     time.sleep(random.random() + random.randint(0, 1))
 
     url_input = input_elements[4]
@@ -191,7 +203,7 @@ def register_api(driver, account):
     time.sleep(2)
 
     descr_input = input_elements[5]
-    descr_input.send_keys('Test api for static map')
+    descr_input.send_keys(account.generate_phrase())
     time.sleep(random.random() + random.randint(0, 1))
 
     check = driver.find_elements(By.CLASS_NAME, 'checkbox__control')[2]
@@ -219,7 +231,7 @@ def register_api(driver, account):
         btn = driver.find_element(By.XPATH, '/html/body/div[3]/div/div/div/section/footer/button[1]')
         btn.click()
         time.sleep(3)
-    except:
+    except Exception:
         return None
 
     key = driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/main/article/section[2]/div/div/div/div[1]/div[2]')
@@ -232,35 +244,17 @@ def add_account_to_file(account, filename):
         data = json.load(open(filename, 'r'))
         data.append(account.to_json())
         json.dump(data, open(filename, 'w'))
-    except:
+    except Exception:
         json.dump([account.to_json()], open(filename, 'w'))
 
 
-def register_multiple_mails(count, filename, hidden=False):
-    accounts = 0
-    while accounts < count:
-        try:
-            driver = create_driver(hidden=hidden)
-            account = register_mail(driver)
-            add_account_to_file(account, filename)
-            accounts += 1
-            print('Registered account')
-            driver.quit()
-            time.sleep(2)
-        except:
-            print('Register fails')
-            driver.quit()
-            time.sleep(2)
-            continue
-
-
-def get_api_keys_for_mails(filename, hidden=False):
+def get_api_keys_for_mails(filename, hidden=False, proxy=None):
     accounts = json.load(open(filename, 'r'))
     for account in accounts:
         if account['TOKEN']:
             continue
         try:
-            driver = create_driver(hidden=hidden)
+            driver = create_driver(hidden=hidden, proxy=proxy)
             key = register_api(driver, Account(account))
             if key:
                 print(key)
@@ -269,7 +263,7 @@ def get_api_keys_for_mails(filename, hidden=False):
                 print('Getting API fails')
             driver.quit()
             time.sleep(2)
-        except:
+        except Exception as e:
             print('Getting API fails')
             driver.quit()
             time.sleep(2)
@@ -277,13 +271,13 @@ def get_api_keys_for_mails(filename, hidden=False):
     json.dump(accounts, open(filename, 'w'))
 
 
-def register_and_get_api(filename, hidden=False):
+def register_and_get_api(filename, hidden=False, proxy=None):
     counter = 0
     while True:
         counter += 1
         is_acc = False
         try:
-            driver = create_driver(hidden=hidden)
+            driver = create_driver(hidden=hidden, proxy=proxy)
             account = register_mail(driver)
             is_acc = True
             print(f'Try № {counter}: account registered')
@@ -296,7 +290,7 @@ def register_and_get_api(filename, hidden=False):
             add_account_to_file(account, filename)
             driver.quit()
             time.sleep(2)
-        except:
+        except Exception:
             print(f'Try № {counter}: FAIL\n')
             if is_acc:
                 add_account_to_file(account, filename)
@@ -305,8 +299,9 @@ def register_and_get_api(filename, hidden=False):
 
 
 if __name__ == '__main__':
-    # register_multiple_mails(count=2, 'accounts.json', hidden=True)
+    my_proxy = 'Selkrayuskhinml97:G6v8BcG@91.90.213.122:45785'
+    # my_proxy = None
 
-    get_api_keys_for_mails('accounts.json', hidden=False)
+    # get_api_keys_for_mails('accounts.json', hidden=False, proxy=my_proxy)
 
-    # register_and_get_api('accounts.json', hidden=True)
+    register_and_get_api('accounts.json', hidden=False, proxy=my_proxy)

@@ -12,6 +12,7 @@ class Account:
             self.lastname = json['lastname']
             self.login = json['login']
             self.password = json['password']
+            self.phone = json.get('phone')
             self.answer = json['answer']
             self.token = json['TOKEN']
         else:
@@ -19,6 +20,7 @@ class Account:
             self.lastname = names.get_last_name()
             self.login = self.create_login()
             self.password = self.create_password()
+            self.phone = None
             self.answer = self.create_answer()
             self.token = False
 
@@ -30,9 +32,9 @@ class Account:
                 "lastname": self.lastname,
                 "login": self.login,
                 "password": self.password,
+                'phone': self.phone,
                 "answer": self.answer,
                 "TOKEN": self.token}
-
 
     def create_login(self):
         symbols = ['.', '-']
@@ -47,3 +49,14 @@ class Account:
 
     def create_answer(self):
         return names.get_full_name()
+
+    def generate_phrase(self):
+        first = ["Home made", "Customly created", "Fully interactive", "Testing project"]
+        second = ["project", "program", "session", "live map", "user friendly agent", "randomly generated",
+                  "highly perfomanced"]
+        third = ["playing a game", "watching map", "talking", "registration", "advising"]
+        return random.choice(first) + " " + random.choice(second) + " for " + random.choice(third)
+
+    def generate_company(self):
+        add = ['Company', 'Co', 'Project', 'Startup', 'Enc']
+        return self.name + random.choice(add)
