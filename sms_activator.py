@@ -71,4 +71,5 @@ def get_code(token, idx):
                 return code
         max_retries -= 1
         time.sleep(loop_time)
+    set_status(token, idx, 'cancel')
     return False

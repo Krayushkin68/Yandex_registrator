@@ -1,12 +1,4 @@
-def prepare_proxy(proxy):
-    creds, addr = proxy.strip().split('@')
-    PROXY_USER, PROXY_PASS = creds.split(':')
-    PROXY_HOST, PROXY_PORT = addr.split(':')
-    # PROXY_HOST = 'x.botproxy.net'  # rotating proxy
-    # PROXY_PORT = 8080
-    # PROXY_USER = 'proxy-user'
-    # PROXY_PASS = 'proxy-password'
-
+def prepare_proxy(proxy_host, proxy_port, proxy_user, proxy_pass):
     manifest_json = """
     {
         "version": "1.0.0",
@@ -57,5 +49,19 @@ def prepare_proxy(proxy):
                 {urls: ["<all_urls>"]},
                 ['blocking']
     );
-    """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
+    """ % (proxy_host, proxy_port, proxy_user, proxy_pass)
     return manifest_json, background_js
+
+
+def parse_proxy(proxy):
+    try:
+        if '@' in proxy:
+            creds, addr = proxy.strip().split('@')
+            proxy_user, proxy_pass = creds.split(':')
+            proxy_host, proxy_port = addr.split(':')
+            return proxy_host, proxy_port, proxy_user, proxy_pass
+        else:
+            proxy_host, proxy_port = proxy.split(':')
+            return proxy_host, proxy_port
+    except Exception:
+        return 'Error parsing proxy. Use format: "user:pass@host:port"'
