@@ -1,8 +1,7 @@
+import names
 import random
 import secrets
 import string
-
-import names
 
 
 class Account:
@@ -59,4 +58,4 @@ class Account:
 
     def generate_company(self):
         add = ['Company', 'Co', 'Project', 'Startup', 'Enc']
-        return self.name + random.choice(add)
+        return self.lastname + random.choice(add)

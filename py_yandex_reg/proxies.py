@@ -1,3 +1,9 @@
+import os
+import zipfile
+
+from py_yandex_reg import logger
+
+
 def prepare_proxy(proxy_host, proxy_port, proxy_user, proxy_pass):
     manifest_json = """
     {
@@ -53,6 +59,15 @@ def prepare_proxy(proxy_host, proxy_port, proxy_user, proxy_pass):
     return manifest_json, background_js
 
 
+def prepare_plugin(driver_path, proxy):
+    pluginfile = os.path.join(os.path.dirname(driver_path), 'proxy_auth_plugin.zip')
+    with zipfile.ZipFile(pluginfile, 'w') as zp:
+        manifest_json, background_js = prepare_proxy(*proxy)
+        zp.writestr("manifest.json", manifest_json)
+        zp.writestr("background.js", background_js)
+    return pluginfile
+
+
 def parse_proxy(proxy):
     try:
         if '@' in proxy:
@@ -64,4 +79,5 @@ def parse_proxy(proxy):
             proxy_host, proxy_port = proxy.split(':')
             return proxy_host, proxy_port
     except Exception:
-        return 'Error parsing proxy. Use format: "user:pass@host:port"'
+        logger.error(f'Error parsing proxy "{proxy}". Use format: "user:pass@host:port"')
+        return False
