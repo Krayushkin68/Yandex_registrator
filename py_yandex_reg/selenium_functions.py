@@ -4,6 +4,7 @@ import time
 import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +20,7 @@ def create_driver(driver_path, hidden=False, proxy=None):
     base_driver = 'undetected'
 
     options = uc.ChromeOptions()
-    options.add_argument('--start-maximized')
+    # options.add_argument('--start-maximized')
     options.headless = hidden
 
     if proxy:
@@ -39,13 +40,13 @@ def create_driver(driver_path, hidden=False, proxy=None):
         if hidden:
             driver.minimize_window()
     time.sleep(2)
-
     return driver
 
 
 def wait_and_click(driver, xpath, wait_time=5, sleep_time=2):
     try:
         WebDriverWait(driver, wait_time).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        ActionChains(driver).move_to_element(driver.find_element(By.XPATH, xpath)).perform()
         try:
             WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
         except Exception:
@@ -58,8 +59,8 @@ def wait_and_click(driver, xpath, wait_time=5, sleep_time=2):
 
 def locate_and_input(driver, xpath, message, sleep_time=0.5):
     try:
-        # el = driver.find_element(By.XPATH, xpath)
         el = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        ActionChains(driver).move_to_element(el).perform()
         el.send_keys(message)
         time.sleep(random.random() + random.randint(0, 1) + sleep_time)
         return True
@@ -67,18 +68,10 @@ def locate_and_input(driver, xpath, message, sleep_time=0.5):
         return False
 
 
-def scroll_down(driver, scroll_val=100):
-    try:
-        driver.execute_script(f"window.scrollTo(0, {scroll_val})")
-        time.sleep(random.random() + random.randint(0, 1))
-    except Exception:
-        pass
-
-
 def get_text(driver, xpath):
     try:
-        # text_el = driver.find_element(By.XPATH, xpath)
         text_el = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        ActionChains(driver).move_to_element(text_el).perform()
         return text_el.text
     except Exception:
         return False
@@ -118,8 +111,6 @@ def register_mail(driver, smshub_token):
     if not locate_and_input(driver, login_input_xpath, account.login):
         raise Exception('Error input account login')
 
-    scroll_down(driver)
-
     pass_input_xpath = '//*[@id="password"]'
     if not locate_and_input(driver, pass_input_xpath, account.password):
         raise Exception('Error input account password')
@@ -127,8 +118,6 @@ def register_mail(driver, smshub_token):
     pass2_input_xpath = '//*[@id="password_confirm"]'
     if not locate_and_input(driver, pass2_input_xpath, account.password):
         raise Exception('Error input account password confirmation')
-
-    scroll_down(driver, 200)
 
     phone = sms_activator.get_number(smshub_token)
     if phone:
@@ -255,18 +244,19 @@ def fill_iframe(driver, account, rucaptcha_token):
     url_input.send_keys(f'https://github.com/{account.name}')
     time.sleep(random.random() + random.randint(0, 1))
 
-    scroll_down(driver, 500)
-
     descr_input = input_elements[5]
+    ActionChains(driver).move_to_element(descr_input).perform()
     descr_input.send_keys(account.generate_phrase())
     time.sleep(random.random() + random.randint(0, 1))
 
     check = driver.find_elements(By.CLASS_NAME, 'checkbox__control')[2]
+    ActionChains(driver).move_to_element(check).perform()
     check.click()
     time.sleep(random.random() + random.randint(0, 1))
 
     captcha_xpath = '/html/body/div/form/div[1]/div[2]/fieldset/div[14]/div/table/tbody/tr[2]/td[2]/div[1]/img'
     captcha = driver.find_element(By.XPATH, captcha_xpath)
+    ActionChains(driver).move_to_element(captcha).perform()
     captcha_img = captcha.get_attribute('src')
     logger.info('DEV - Waiting for CAPTCHA to be solved')
     captcha_res = solve(captcha_img, rucaptcha_token)
@@ -275,6 +265,7 @@ def fill_iframe(driver, account, rucaptcha_token):
     logger.info('DEV - CAPTCHA solved')
 
     captcha_input = input_elements[8]
+    ActionChains(driver).move_to_element(captcha_input).perform()
     captcha_input.send_keys(captcha_res)
     time.sleep(random.random() + random.randint(0, 1))
 

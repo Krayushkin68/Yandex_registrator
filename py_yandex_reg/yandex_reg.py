@@ -23,7 +23,7 @@ class YandexRegistrator:
         self._accounts_file = savepath
         self.set_driver_path(driver_path)
 
-    def set_driver_path(self, path):
+    def set_driver_path(self, path: str):
         if not os.path.isabs(path):
             path = os.path.join(os.getcwd(), path)
         if os.path.exists(path):
@@ -32,6 +32,13 @@ class YandexRegistrator:
             raise Exception(f'Driver on path: "{path}" not found.\nPlease specify it with .set_driver_path() method.')
 
     def set_proxies(self, proxies):
+        """
+        Use formats:
+        With auth    - "username:password@host:port"
+        Without auth - "host:port"
+        :param proxies: str() / list()
+        :return: None
+        """
         if isinstance(proxies, str):
             proxies = [proxies]
         for proxy in proxies:
@@ -51,15 +58,6 @@ class YandexRegistrator:
         else:
             logger.error(f'File "{path}" not found')
             return False
-
-    def _prepare_proxy(self, use_proxy):
-        if not use_proxy:
-            return None
-
-        if not self._proxies:
-            logger.warning('Proxy list is empty. Will start without proxy. Use .set_proxies() method.')
-            return None
-        return random.choice(self._proxies)
 
     def register_mail(self, hidden=False, use_proxy=False):
         proxy = self._prepare_proxy(use_proxy)
@@ -98,7 +96,7 @@ class YandexRegistrator:
 
         account.token = key
         self._update_account_in_file(account)
-        return key
+        return account
 
     def generate_api(self, hidden=False, use_proxy=False):
         proxy = self._prepare_proxy(use_proxy)
@@ -145,7 +143,30 @@ class YandexRegistrator:
         return tokens
 
     def get_accounts(self):
-        return self._accounts
+        return [account.to_json() for account in self._accounts]
+
+    def register_nontoken_accounts(self, hidden=False, use_proxy=False):
+        if self._load_accounts():
+            for account in self._accounts:
+                if not account.token:
+                    self.register_api(account, hidden, use_proxy)
+
+    def save_tokens(self, path):
+        tokens = [acc.token for acc in self._accounts if acc.token]
+        if not os.path.exists(path):
+            logger.error(f'File "{path}" not found')
+            return False
+        json.dump({"TOKENS": tokens}, open(path, 'w'))
+        return True
+
+    def _prepare_proxy(self, use_proxy):
+        if not use_proxy:
+            return None
+
+        if not self._proxies:
+            logger.warning('Proxy list is empty. Will start without proxy. Use .set_proxies() method.')
+            return None
+        return random.choice(self._proxies)
 
     def _add_account_to_file(self, account):
         try:
@@ -168,7 +189,7 @@ class YandexRegistrator:
         except Exception:
             return False
 
-    def load_accounts(self):
+    def _load_accounts(self):
         if not self._accounts_file:
             logger.error('Accounts file is not set. Use .set_save_path() method')
             return False
@@ -182,10 +203,3 @@ class YandexRegistrator:
         except Exception as e:
             logger.error(f'Exception {e.__str__()}')
             return False
-
-    def save_tokens(self, path):
-        tokens = [acc.token for acc in self._accounts if acc.token]
-        if not os.path.exists(path):
-            logger.error(f'File "{path}" not found')
-            return False
-        json.dump({"TOKENS": tokens}, open(path, 'w'))
