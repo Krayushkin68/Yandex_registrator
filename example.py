@@ -19,5 +19,3 @@ print(ya_reg.get_api_tokens())
 
 # Returns list of account in json format
 print(ya_reg.get_accounts())
-
-# TODO: Error filling iframe in mimnimized mode with proxy

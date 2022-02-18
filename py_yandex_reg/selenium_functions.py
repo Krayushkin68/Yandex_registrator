@@ -20,7 +20,7 @@ def create_driver(driver_path, hidden=False, proxy=None):
     base_driver = 'undetected'
 
     options = uc.ChromeOptions()
-    # options.add_argument('--start-maximized')
+    options.add_argument('--start-maximized')
     options.headless = hidden
 
     if proxy:
@@ -47,13 +47,15 @@ def wait_and_click(driver, xpath, wait_time=5, sleep_time=2):
     try:
         WebDriverWait(driver, wait_time).until(EC.presence_of_element_located((By.XPATH, xpath)))
         ActionChains(driver).move_to_element(driver.find_element(By.XPATH, xpath)).perform()
+        time.sleep(0.5)
         try:
             WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
         except Exception:
             driver.find_element(By.XPATH, xpath).click()
         time.sleep(sleep_time)
         return True
-    except Exception:
+    except Exception as e:
+        print(e)
         return False
 
 
@@ -61,16 +63,17 @@ def locate_and_input(driver, xpath, message, sleep_time=0.5):
     try:
         el = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
         ActionChains(driver).move_to_element(el).perform()
+        time.sleep(0.5)
         el.send_keys(message)
-        time.sleep(random.random() + random.randint(0, 1) + sleep_time)
+        time.sleep(random.random() + sleep_time)
         return True
     except Exception:
         return False
 
 
-def get_text(driver, xpath):
+def get_text(driver, xpath, wait_time=10):
     try:
-        text_el = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        text_el = WebDriverWait(driver, wait_time).until(EC.presence_of_element_located((By.XPATH, xpath)))
         ActionChains(driver).move_to_element(text_el).perform()
         return text_el.text
     except Exception:
@@ -147,7 +150,7 @@ def register_mail(driver, smshub_token):
         logger.info('MAIL - Waiting for code input field to appear')
         toggle_sms_xpath = '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/div[1]/' \
                            'div/div/div[2]/div[3]/span'
-        if not wait_and_click(driver, toggle_sms_xpath, wait_time=35):
+        if not wait_and_click(driver, toggle_sms_xpath, wait_time=40):
             sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
             raise Exception('Error clicking "Send SMS"')
         logger.info('MAIL - Input field appears')
@@ -222,25 +225,30 @@ def fill_iframe(driver, account, rucaptcha_token):
     input_elements = driver.find_elements(By.CLASS_NAME, 'input__control')
 
     cmp_name_input = input_elements[0]
+    ActionChains(driver).move_to_element(cmp_name_input).perform()
     cmp_name_input.clear()
     cmp_name_input.send_keys(account.generate_company())
     time.sleep(random.random() + random.randint(0, 1))
 
     name_input = input_elements[1]
+    ActionChains(driver).move_to_element(name_input).perform()
     name_input.clear()
     name_input.send_keys(f'{account.name} {account.lastname}')
     time.sleep(random.random() + random.randint(0, 1))
 
     login_input = input_elements[2]
+    ActionChains(driver).move_to_element(login_input).perform()
     login_input.clear()
     login_input.send_keys(f'{account.login}@yandex.ru')
     time.sleep(random.random() + random.randint(0, 1))
 
     phone_input = input_elements[3]
+    ActionChains(driver).move_to_element(phone_input).perform()
     phone_input.send_keys(f'+{account.phone}')
     time.sleep(random.random() + random.randint(0, 1))
 
     url_input = input_elements[4]
+    ActionChains(driver).move_to_element(url_input).perform()
     url_input.send_keys(f'https://github.com/{account.name}')
     time.sleep(random.random() + random.randint(0, 1))
 
@@ -251,7 +259,9 @@ def fill_iframe(driver, account, rucaptcha_token):
 
     check = driver.find_elements(By.CLASS_NAME, 'checkbox__control')[2]
     ActionChains(driver).move_to_element(check).perform()
-    check.click()
+    time.sleep(0.5)
+    # check.click()
+    driver.execute_script("arguments[0].click();", check)
     time.sleep(random.random() + random.randint(0, 1))
 
     captcha_xpath = '/html/body/div/form/div[1]/div[2]/fieldset/div[14]/div/table/tbody/tr[2]/td[2]/div[1]/img'
@@ -305,7 +315,7 @@ def register_api(driver, account, rucaptcha_token):
     logger.info('DEV - YANDEX decision ACCEPT')
 
     key_xpath = '//*[@id="root"]/div/div[2]/main/article/section[2]/div/div/div/div[1]/div[2]'
-    key = get_text(driver, key_xpath)
+    key = get_text(driver, key_xpath, wait_time=30)
     if not key:
         raise Exception('Error getting API key')
 
