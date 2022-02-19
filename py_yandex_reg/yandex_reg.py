@@ -85,6 +85,7 @@ class YandexRegistrator:
             driver_created = True
             need_auth = selenium_functions.is_authorize_needed(driver)
             if need_auth:
+                # TODO: check if account is blocked
                 selenium_functions.pass_authorize_form(driver, account)
             key = selenium_functions.register_api(driver, account, self._rucaptcha_token)
             driver.quit()

@@ -54,8 +54,7 @@ def wait_and_click(driver, xpath, wait_time=5, sleep_time=2):
             driver.find_element(By.XPATH, xpath).click()
         time.sleep(sleep_time)
         return True
-    except Exception as e:
-        print(e)
+    except Exception:
         return False
 
 

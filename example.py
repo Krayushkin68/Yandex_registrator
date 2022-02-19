@@ -1,18 +1,20 @@
+import json
+
 from py_yandex_reg import YandexRegistrator
 
-RUCAPTCHA_TOKEN = 'b5261412e3c479060c259da67a7fc895'
-SMSHUB_TOKEN = '33391Ua3a055afde7b7da9dcb97391d732e8ce'
-
-proxies = ['Selkrayuskhinml97:G6v8BcG@91.90.213.122:45785']
+config = json.load(open('config.json', 'r'))
+RUCAPTCHA_TOKEN = config['RUCAPTCHA_TOKEN']
+SMSHUB_TOKEN = config['SMSHUB_TOKEN']
+proxies = config['proxies']
 
 ya_reg = YandexRegistrator(rucaptcha_token=RUCAPTCHA_TOKEN, smshub_token=SMSHUB_TOKEN, savepath='accounts.json')
 ya_reg.set_proxies(proxies)
 
 # Used to register new mail and get an API key. Accounts will be automatically saved to "savepath".
-ya_reg.generate_apis(count=1, hidden=True, use_proxy=True)
+ya_reg.generate_apis(count=1, hidden=True, use_proxy=False)
 
-# Used to get an API key for accounts that do not have it. Accounts will be automatically saved to "savepath".
-ya_reg.register_nontoken_accounts(hidden=True, use_proxy=True)
+# Used to get an API keys for accounts from "savepath" that don't have it. Keys will be automatically saved to file.
+ya_reg.register_nontoken_accounts(hidden=False, use_proxy=False)
 
 # Returns list of API keys in json format
 print(ya_reg.get_api_tokens())
