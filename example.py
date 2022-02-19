@@ -8,6 +8,10 @@ SMSHUB_TOKEN = config['SMSHUB_TOKEN']
 proxies = config['proxies']
 
 ya_reg = YandexRegistrator(rucaptcha_token=RUCAPTCHA_TOKEN, smshub_token=SMSHUB_TOKEN, savepath='accounts.json')
+
+# Use proxies in str or list in these formats:
+# With auth    - "username:password@host:port"
+# Without auth - "host:port"
 ya_reg.set_proxies(proxies)
 
 # Used to register new mail and get an API key. Accounts will be automatically saved to "savepath".
