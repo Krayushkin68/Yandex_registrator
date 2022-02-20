@@ -7,7 +7,13 @@ from py_yandex_reg import selenium_functions
 from py_yandex_reg.account import Account
 from py_yandex_reg.proxies import parse_proxy
 
-DEFAULT_DRIVER_PATH = os.path.join(os.getcwd(), r'drivers\chromedriver.exe')
+if os.name == 'nt':
+    DEFAULT_DRIVER_PATH = os.path.join(os.getcwd(), 'drivers', 'chromedriver.exe')
+else:
+    if os.environ['chromedriver']:
+        DEFAULT_DRIVER_PATH = os.environ['chromedriver']
+    else:
+        DEFAULT_DRIVER_PATH = os.path.join(os.getcwd(), 'drivers', 'chromedriver')
 
 
 class YandexRegistrator:

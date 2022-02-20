@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+
+  py_yandex_reg:
+    build: .
+    volumes:
+      - ./accounts.json:/code/accounts.json
+    command: python example.py
