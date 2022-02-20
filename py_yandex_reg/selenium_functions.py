@@ -1,6 +1,7 @@
 import random
 import time
 
+import chromedriver_autoinstaller
 import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -20,8 +21,13 @@ def create_driver(driver_path, hidden=False, proxy=None):
     base_driver = 'undetected'
 
     options = uc.ChromeOptions()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--start-maximized')
     options.headless = hidden
+
+    if not driver_path:
+        driver_path = chromedriver_autoinstaller.install()
 
     if proxy:
         if len(proxy) == 4:

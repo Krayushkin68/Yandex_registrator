@@ -7,14 +7,6 @@ from py_yandex_reg import selenium_functions
 from py_yandex_reg.account import Account
 from py_yandex_reg.proxies import parse_proxy
 
-if os.name == 'nt':
-    DEFAULT_DRIVER_PATH = os.path.join(os.getcwd(), 'drivers', 'chromedriver.exe')
-else:
-    if os.environ['chromedriver']:
-        DEFAULT_DRIVER_PATH = os.environ['chromedriver']
-    else:
-        DEFAULT_DRIVER_PATH = os.path.join(os.getcwd(), 'drivers', 'chromedriver')
-
 
 class YandexRegistrator:
     _driver_path = str()
@@ -23,11 +15,12 @@ class YandexRegistrator:
     _proxies = []
     _accounts = []
 
-    def __init__(self, rucaptcha_token, smshub_token, driver_path=DEFAULT_DRIVER_PATH, savepath='accounts.json'):
+    def __init__(self, rucaptcha_token, smshub_token, driver_path=None, savepath='accounts.json'):
         self._rucaptcha_token = rucaptcha_token
         self._smshub_token = smshub_token
         self._accounts_file = savepath
-        self.set_driver_path(driver_path)
+        if driver_path:
+            self.set_driver_path(driver_path)
 
     def set_driver_path(self, path: str):
         if not os.path.isabs(path):
@@ -163,7 +156,7 @@ class YandexRegistrator:
         if not os.path.exists(path):
             logger.error(f'File "{path}" not found')
             return False
-        json.dump({"TOKENS": tokens}, open(path, 'w'))
+        json.dump({"TOKENS": tokens}, open(path, 'w'), indent=4)
         return True
 
     def _prepare_proxy(self, use_proxy):
@@ -179,7 +172,7 @@ class YandexRegistrator:
         try:
             data = json.load(open(self._accounts_file, 'r'))
             data.append(account.to_json())
-            json.dump(data, open(self._accounts_file, 'w'))
+            json.dump(data, open(self._accounts_file, 'w'), indent=4)
         except Exception:
             json.dump([account.to_json()], open(self._accounts_file, 'w'), indent=4)
 
