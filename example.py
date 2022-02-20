@@ -18,7 +18,7 @@ ya_reg.set_proxies(proxies)
 ya_reg.generate_apis(count=1, hidden=True, use_proxy=False)
 
 # Used to get an API keys for accounts from "savepath" that don't have it. Keys will be automatically saved to file.
-# ya_reg.register_nontoken_accounts(hidden=False, use_proxy=False)
+ya_reg.register_nontoken_accounts(hidden=True, use_proxy=False)
 
 # Returns list of API keys in json format
 print(ya_reg.get_api_tokens())

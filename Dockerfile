@@ -8,7 +8,7 @@ RUN apt-get install -y google-chrome-stable
 
 # move project
 RUN mkdir /code
-COPY . /code
+COPY ./requirements.txt /code/requirements.txt
 
 # install chromedriver
 RUN apt-get install -yqq unzip

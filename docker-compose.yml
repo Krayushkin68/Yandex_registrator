@@ -5,5 +5,8 @@ services:
   py_yandex_reg:
     build: .
     volumes:
+      - ./py_yandex_reg:/code/py_yandex_reg
       - ./accounts.json:/code/accounts.json
+      - ./config.json:/code/config.json
+      - ./example.py:/code/example.py
     command: python example.py
