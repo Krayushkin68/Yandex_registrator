@@ -2,4 +2,3 @@ __venv/
 venv/
 .idea/
 __pycache__/
-config.json
