@@ -6,6 +6,9 @@ RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable 
 RUN apt-get -y update
 RUN apt-get install -y google-chrome-stable
 
+# install xvfb
+RUN apt-get update && apt-get install -y software-properties-common unzip curl xvfb
+
 # move project
 RUN mkdir /code
 COPY ./requirements.txt /code/requirements.txt
@@ -13,7 +16,7 @@ COPY ./requirements.txt /code/requirements.txt
 
 # set display port to avoid crash
 ENV DISPLAY=:99
-ENV chromedriver /tmp/chromedriver
+ENV RUN_IN_DOCKER True
 
 WORKDIR /code
 

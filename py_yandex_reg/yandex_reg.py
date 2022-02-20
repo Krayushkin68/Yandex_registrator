@@ -61,16 +61,24 @@ class YandexRegistrator:
     def register_mail(self, hidden=False, use_proxy=False):
         proxy = self._prepare_proxy(use_proxy)
         driver_created = False
+        display_started = False
+
+        if os.name == 'posix' and ((hidden and use_proxy) or (not hidden and os.environ.get('RUN_IN_DOCKER', False))):
+            selenium_functions.create_display()
+            display_started = True
+
         try:
             driver = selenium_functions.create_driver(self._driver_path, hidden, proxy)
             driver_created = True
             account = selenium_functions.register_mail(driver, self._smshub_token)
-            driver.quit()
         except Exception as e:
             logger.error(f'Exception {e}')
+            return False
+        finally:
             if driver_created:
                 driver.quit()
-            return False
+            if display_started:
+                selenium_functions.display.stop()
 
         self._accounts.append(account)
         self._add_account_to_file(account)
@@ -79,6 +87,13 @@ class YandexRegistrator:
     def register_api(self, account, hidden=False, use_proxy=False):
         proxy = self._prepare_proxy(use_proxy)
         driver_created = False
+        display_started = False
+
+        if os.name == 'posix':
+            if use_proxy or (not hidden and os.environ.get('RUN_IN_DOCKER', False)):
+                selenium_functions.create_display()
+                display_started = True
+
         try:
             driver = selenium_functions.create_driver(self._driver_path, hidden, proxy)
             driver_created = True
@@ -87,12 +102,14 @@ class YandexRegistrator:
                 # TODO: check if account is blocked
                 selenium_functions.pass_authorize_form(driver, account)
             key = selenium_functions.register_api(driver, account, self._rucaptcha_token)
-            driver.quit()
         except Exception as e:
             logger.error(f'Exception {e}')
+            return False
+        finally:
             if driver_created:
                 driver.quit()
-            return False
+            if display_started:
+                selenium_functions.display.stop()
 
         account.token = key
         self._update_account_in_file(account)
@@ -101,6 +118,12 @@ class YandexRegistrator:
     def generate_api(self, hidden=False, use_proxy=False):
         proxy = self._prepare_proxy(use_proxy)
         driver_created = False
+        display_started = False
+
+        if os.name == 'posix' and ((hidden and use_proxy) or (not hidden and os.environ.get('RUN_IN_DOCKER', False))):
+            selenium_functions.create_display()
+            display_started = True
+
         try:
             driver = selenium_functions.create_driver(self._driver_path, hidden, proxy)
             driver_created = True
@@ -110,12 +133,14 @@ class YandexRegistrator:
             if need_auth:
                 selenium_functions.pass_authorize_form(driver, account)
             key = selenium_functions.register_api(driver, account, self._rucaptcha_token)
-            driver.quit()
         except Exception as e:
             logger.error(f'Exception {e}')
+            return False
+        finally:
             if driver_created:
                 driver.quit()
-            return False
+            if display_started:
+                selenium_functions.display.stop()
 
         account.token = key
         self._accounts.append(account)

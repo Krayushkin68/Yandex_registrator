@@ -1,8 +1,10 @@
+import os
 import random
 import time
 
 import chromedriver_autoinstaller
 import undetected_chromedriver as uc
+from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
@@ -16,6 +18,14 @@ from py_yandex_reg.account import Account
 from py_yandex_reg.captcha import solve
 from py_yandex_reg.proxies import prepare_plugin
 
+display = None
+
+
+def create_display():
+    global display
+    display = Display(visible=0, size=(1920, 1080))
+    display.start()
+
 
 def create_driver(driver_path, hidden=False, proxy=None):
     base_driver = 'undetected'
@@ -24,6 +34,7 @@ def create_driver(driver_path, hidden=False, proxy=None):
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--start-maximized')
+
     options.headless = hidden
 
     if not driver_path:
@@ -43,7 +54,7 @@ def create_driver(driver_path, hidden=False, proxy=None):
     else:
         service = Service(driver_path)
         driver = webdriver.Chrome(service=service, options=options)
-        if hidden:
+        if hidden and os.name == 'nt':
             driver.minimize_window()
     time.sleep(2)
     return driver
