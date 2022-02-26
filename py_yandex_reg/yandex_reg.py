@@ -178,7 +178,7 @@ class YandexRegistrator:
 
     def save_tokens(self, path):
         tokens = [acc.token for acc in self._accounts if acc.token]
-        if not os.path.exists(path):
+        if not os.path.exists(os.path.dirname(os.path.abspath(path))):
             logger.error(f'File "{path}" not found')
             return False
         json.dump({"TOKENS": tokens}, open(path, 'w'), indent=4)
