@@ -1,0 +1,7 @@
+{
+  "RUCAPTCHA_TOKEN": "<YOUR_TOKEN>",
+  "SMSHUB_TOKEN": "<YOUR_TOKEN>",
+  "proxies": [
+    "user:pass@host:port"
+  ]
+}
