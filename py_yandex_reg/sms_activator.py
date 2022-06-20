@@ -2,8 +2,6 @@ import time
 
 import requests
 
-TOKEN = '33391Ua3a055afde7b7da9dcb97391d732e8ce'
-
 
 def get_number(token):
     params = {
@@ -11,7 +9,7 @@ def get_number(token):
         'action': 'getNumber',
         'service': 'ya',
     }
-    url = 'https://smshub.org/stubs/handler_api.php'
+    url = 'http://smshub.org/stubs/handler_api.php'
     r = requests.get(url, params=params)
     if r.status_code == 200:
         msg = r.content.decode()
@@ -48,7 +46,7 @@ def set_status(token, idx, status):
         'status': status,
         'id': idx,
     }
-    url = 'https://smshub.org/stubs/handler_api.php'
+    url = 'http://smshub.org/stubs/handler_api.php'
     requests.get(url, params=params)
 
 
@@ -58,7 +56,7 @@ def get_code(token, idx):
         'action': 'getStatus',
         'id': idx,
     }
-    url = 'https://smshub.org/stubs/handler_api.php'
+    url = 'http://smshub.org/stubs/handler_api.php'
 
     loop_time = 5
     max_retries = 20

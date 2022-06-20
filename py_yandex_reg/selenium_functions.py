@@ -148,36 +148,36 @@ def register_mail(driver, smshub_token):
 
     phone_input_xpath = '//*[@id="phone"]'
     if not locate_and_input(driver, phone_input_xpath, phone[1:]):
-        sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+        sms_activator.set_status(smshub_token, idx, 'cancel')
         raise Exception('Error input phone number')
 
-    send_btn_xpath = '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/button'
+    send_btn_xpath = '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div/button'
     if not wait_and_click(driver, send_btn_xpath):
-        sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+        sms_activator.set_status(smshub_token, idx, 'cancel')
         raise Exception('Error clicking "Confirm number"')
 
     send_text_xpath = '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[1]/span'
     send_text = get_text(driver, send_text_xpath)
 
     if not send_text:
-        sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+        sms_activator.set_status(smshub_token, idx, 'cancel')
         raise Exception('Error getting text from "Send code" element')
     elif send_text != 'Минутку, код подтверждения отправлен на указанный номер':
         logger.info('MAIL - Waiting for code input field to appear')
         toggle_sms_xpath = '//*[@id="root"]/div/div[2]/div/main/div/div/div/form/div[3]/div/div[2]/div/div[2]/div[1]/' \
-                           'div/div/div[2]/div[3]/span'
+                           'div/div/div[2]/div[2]/span'
         if not wait_and_click(driver, toggle_sms_xpath, wait_time=40):
-            sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+            sms_activator.set_status(smshub_token, idx, 'cancel')
             raise Exception('Error clicking "Send SMS"')
         logger.info('MAIL - Input field appears')
 
-    sms_activator.set_status(sms_activator.TOKEN, idx, 'send')
+    sms_activator.set_status(smshub_token, idx, 'send')
     logger.info('MAIL - SMS sent, waiting for code')
-    code = sms_activator.get_code(sms_activator.TOKEN, idx)
+    code = sms_activator.get_code(smshub_token, idx)
     if not code:
-        sms_activator.set_status(sms_activator.TOKEN, idx, 'cancel')
+        sms_activator.set_status(smshub_token, idx, 'cancel')
         raise Exception('Getting SMS error')
-    sms_activator.set_status(sms_activator.TOKEN, idx, 'done')
+    sms_activator.set_status(smshub_token, idx, 'done')
     logger.info('MAIL - Code received')
 
     code_input_xpath = '//*[@id="phoneCode"]'

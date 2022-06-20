@@ -15,7 +15,7 @@ ya_reg = YandexRegistrator(rucaptcha_token=RUCAPTCHA_TOKEN, smshub_token=SMSHUB_
 ya_reg.set_proxies(proxies)
 
 # Used to register new mail and get an API key. Accounts will be automatically saved to "savepath".
-ya_reg.generate_apis(count=1, hidden=True, use_proxy=False)
+ya_reg.generate_apis(count=1, hidden=False, use_proxy=False)
 
 # Used to get an API keys for accounts from "savepath" that don't have it. Keys will be automatically saved to file.
 ya_reg.register_nontoken_accounts(hidden=True, use_proxy=False)
